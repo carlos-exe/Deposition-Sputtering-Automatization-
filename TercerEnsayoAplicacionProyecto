@@ -215,7 +215,7 @@ class MainWindow(QMainWindow):
             self.id_refresh_button_clicked
         )
         # Motor Button
-        self.set_speed_button.pressed.connect(self.motor_speed_slider_updated)
+        self.set_speed_button.pressed.connect(self.motor_speed_button_updated)
         
 
         self.set_id_button.pressed.connect(self.id_updated)
@@ -266,7 +266,7 @@ class MainWindow(QMainWindow):
         # Activate the speed editor
         self.set_speed_line_edit.setEnabled(True)
         self.stages_enabled_checkbox.setEnabled(True)
-        self.set_stages_line_edit.setEnabled(False)
+        # self.set_stages_line_edit.setEnabled(False)
 
         self.set_id_line_edit.setEnabled(True)
         self.position_slider.setEnabled(True)
@@ -534,6 +534,23 @@ class MainWindow(QMainWindow):
             self.set_stages_button.pressed.connect(self.createStages)
         else:
             pass
+
+    @catch_disconnection
+    def motor_speed_button_updated(self):
+
+        pos = self.set_speed_line_edit.text()
+
+        if float(self.voltage_readout.text()[:-2]) < 5:
+            QMessageBox.warning(
+                None,
+                "Error",
+                "The voltage going through the servo is too low. Is your battery powered on?",
+            )
+
+            return
+        self.active_servo.motor_mode(int(pos))
+        # Speed indicator
+        self.speed_slider_readout.setText(f"{int(pos)}")
 
     @catch_disconnection
     def motor_speed_slider_updated(self, pos):
