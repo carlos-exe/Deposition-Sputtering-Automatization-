@@ -20,6 +20,7 @@ import serial.serialutil
 from pylx16a.lx16a import *
 import platform
 import sys
+import time
 
 
 def catch_disconnection(func):
@@ -186,12 +187,7 @@ class MainWindow(QMainWindow):
         self.set_speed_button.setFixedSize(50, 27)
 
         # Añadir el botón de etapas
-
-        self.stages_enabled_checkbox = QCheckBox("Stages", self)
-        self.stages_enabled_checkbox.move(565, 230)
-        self.stages_enabled_checkbox.setFixedWidth(200)
         
-
         self.readout_update_timer = QTimer(self)
         self.readout_update_timer.timeout.connect(self.update_readouts)
         self.readout_update_timer.start(250)
@@ -237,9 +233,6 @@ class MainWindow(QMainWindow):
         self.motor_mode_radio_button.toggled.connect(
             self.motor_mode_radio_button_toggled
         )
-        self.stages_enabled_checkbox.stateChanged.connect(
-            self.stages_enabled_checkbox_toggled
-        )
         self.motor_speed_slider.valueChanged.connect(self.motor_speed_slider_updated)
 
         self.scan_for_ports()
@@ -248,7 +241,6 @@ class MainWindow(QMainWindow):
 
         # Disable the speed editor
         self.set_speed_line_edit.setEnabled(False)
-        self.stages_enabled_checkbox.setEnabled(False)
 
         self.set_id_line_edit.setEnabled(False)
         self.position_slider.setEnabled(False)
@@ -265,8 +257,6 @@ class MainWindow(QMainWindow):
 
         # Activate the speed editor
         self.set_speed_line_edit.setEnabled(True)
-        self.stages_enabled_checkbox.setEnabled(True)
-        # self.set_stages_line_edit.setEnabled(False)
 
         self.set_id_line_edit.setEnabled(True)
         self.position_slider.setEnabled(True)
@@ -377,28 +367,6 @@ class MainWindow(QMainWindow):
             return
 
         QMessageBox.warning(None, "Error", "ID already taken")
-
-    # Add Stages Function
-    @catch_disconnection
-    def createStages(self,number):
-        col = 250
-        for i in range(number):
-            set_individual_stages_line_edit_label = QLabel(f"Stage {i+1}:", self)
-            set_individual_stages_line_edit_label.move(565, col)
-            set_individual_stages_line_edit_label.setFixedSize(70, 27)
-
-            self.set_goOn_line_edit = QLineEdit(self)
-            self.set_goOn_line_edit.setFixedSize(50, 27)
-            self.set_goOn_line_edit.move(665, col)
-
-            col += 20
-
-        self.set_goOn_button = QPushButton("Go on", self)
-        self.set_goOn_button.setFixedSize(85, 27)
-        self.set_goOn_button.move(565, col)
-
-        self.set_goOn_button.setEnabled(True)
-        self.set_goOn_line_edit.setEnabled(True)
         
     @catch_disconnection
     def position_slider_updated(self, pos):
@@ -517,25 +485,6 @@ class MainWindow(QMainWindow):
             self.position_offset_slider.setEnabled(True)
 
     @catch_disconnection
-    def stages_enabled_checkbox_toggled(self, checked):
-        if checked:
-            self.set_stages_line_edit = QLineEdit(self)
-            self.set_stages_line_edit.setFixedSize(50, 27)
-            self.set_stages_line_edit.move(665, 230)
-
-            self.set_stages_button = QPushButton("Create", self)
-            self.set_stages_button.setFixedSize(85, 27)
-            self.set_stages_button.move(665, 230)
-
-            # Stages Button
-            
-            self.set_stages_line_edit.setEnabled(True)
-            self.set_stages_button.setEnabled(True)
-            self.set_stages_button.pressed.connect(self.createStages)
-        else:
-            pass
-
-    @catch_disconnection
     def motor_speed_button_updated(self):
 
         pos = self.set_speed_line_edit.text()
@@ -549,6 +498,9 @@ class MainWindow(QMainWindow):
 
             return
         self.active_servo.motor_mode(int(pos))
+        time.sleep(5)
+        self.active_servo.motor_mode(0)
+
         # Speed indicator
         self.speed_slider_readout.setText(f"{int(pos)}")
 
