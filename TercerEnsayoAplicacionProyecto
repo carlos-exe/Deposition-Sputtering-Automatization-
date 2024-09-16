@@ -1,12 +1,9 @@
-# Version 1.1.2
-
 from PyQt6.QtWidgets import (
     QApplication,
     QMainWindow,
     QComboBox,
     QListWidget,
     QLabel,
-    QSlider,
     QLineEdit,
     QRadioButton,
     QCheckBox,
@@ -14,7 +11,7 @@ from PyQt6.QtWidgets import (
     QMessageBox,
 )
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QIntValidator
+from PyQt6.QtGui import  QFont
 import serial.tools.list_ports
 import serial.serialutil
 from pylx16a.lx16a import *
@@ -42,161 +39,496 @@ def catch_disconnection(func):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setFixedSize(800, 410)
-        self.setWindowTitle(f"LX-16A Testing Software v1.1.2 ({platform.system()})")
+        self.setFixedSize(835, 480)
+
+        # Title
+
+        self.setWindowTitle(f"Sputtering Automation v1.0 ({platform.system()})")
+
+        
+        # Ports Bar
 
         self.port_selection_box = QComboBox(self)
         self.port_selection_box.setFixedSize(200, 27)
         self.port_selection_box.move(30, 65)
+
+        # Select Port Text
+
         port_selection_box_label = QLabel("Select Port:", self)
         port_selection_box_label.move(30, 35)
+
+        # Refresh button
 
         self.port_selection_box_refresh_button = QPushButton("Refresh", self)
         self.port_selection_box_refresh_button.setFixedSize(60, 23)
         self.port_selection_box_refresh_button.move(170, 38)
 
+        # Servos Connected Section
+
         self.id_selection_box = QListWidget(self)
         self.id_selection_box.setFixedSize(200, 200)
         self.id_selection_box.move(30, 135)
+
+        # Connected Servos text
+
         id_selection_box_label = QLabel("Connected Servos:", self)
         id_selection_box_label.setFixedWidth(200)
         id_selection_box_label.move(30, 105)
+
+        # Refresh Button
 
         self.id_selection_box_refresh_button = QPushButton("Refresh", self)
         self.id_selection_box_refresh_button.setFixedSize(60, 23)
         self.id_selection_box_refresh_button.move(170, 108)
 
+        # Set ID Edit
+
         self.set_id_line_edit = QLineEdit(self)
         self.set_id_line_edit.setFixedSize(50, 27)
         self.set_id_line_edit.move(80, 355)
+
+        # Set ID text
+
         set_id_line_edit_label = QLabel("Set ID:", self)
         set_id_line_edit_label.move(30, 355)
         set_id_line_edit_label.setFixedSize(50, 27)
+
+        # Change ID button
 
         self.set_id_button = QPushButton("Change ID!", self)
         self.set_id_button.setFixedSize(85, 27)
         self.set_id_button.move(145, 355)
 
-        self.position_slider = QSlider(Qt.Orientation.Horizontal, self)
-        self.position_slider.setMinimum(90)# Mínimo 90 = 0°
-        self.position_slider.setMaximum(192)# Máximo 192 = 90°
-        self.position_slider.setFixedWidth(200)
-        self.position_slider.move(300, 55)
-        self.position_slider_readout = QLabel("0°", self) 
-        self.position_slider_readout.setFixedWidth(50)
-        self.position_slider_readout.move(450, 30)
-        self.position_slider_readout.setAlignment(
-            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-        )
-        position_slider_label = QLabel("Angle (degrees):", self)
-        position_slider_label.move(300, 30)
+        # Motor Status
 
-        self.position_offset_slider = QSlider(Qt.Orientation.Horizontal, self)
-        self.position_offset_slider.setMinimum(-30)
-        self.position_offset_slider.setMaximum(30)
-        self.position_offset_slider.setFixedWidth(200)
-        self.position_offset_slider.move(300, 125)
-        self.position_offset_slider_readout = QLabel("0.00°", self)
-        self.position_offset_slider_readout.setFixedWidth(50)
-        self.position_offset_slider_readout.move(450, 100)
-        self.position_offset_slider_readout.setAlignment(
-            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-        )
-        position_offset_slider_label = QLabel("Angle offset (degrees):", self)
-        position_offset_slider_label.setFixedWidth(200)
-        position_offset_slider_label.move(300, 100)
+        ## Motor Status title
 
-        self.angle_lower_limit_textentry = QLineEdit(self)
-        self.angle_lower_limit_textentry.setFixedWidth(50)
-        self.angle_lower_limit_textentry.move(450, 175)
-        self.angle_lower_limit_textentry.setValidator(QIntValidator(90, 192, self))
-        self.angle_upper_limit_textentry = QLineEdit(self)
-        self.angle_upper_limit_textentry.setFixedWidth(50)
-        self.angle_upper_limit_textentry.move(450, 210)
-        self.angle_upper_limit_textentry.setValidator(QIntValidator(90, 192, self))
-        self.angle_lower_limit_textentry_label = QLabel("Lower Limit (degrees):", self)
-        self.angle_lower_limit_textentry_label.move(300, 175)
-        self.angle_lower_limit_textentry_label.setFixedWidth(150)
-        self.angle_upper_limit_textentry_label = QLabel("Upper Limit (degrees):", self)
-        self.angle_upper_limit_textentry_label.move(300, 210)
-        self.angle_upper_limit_textentry_label.setFixedWidth(150)
+        self.Motor_Status_label = QLabel("MOTOR STATUS", self)
+        self.Motor_Status_label.move(80, 390)
+        font = QFont('Arial',10,QFont.Weight.Bold)
+        self.Motor_Status_label.setFont(font)
+        self.Motor_Status_label.setFixedSize(110,27)
 
-        self.vin_lower_limit_textentry = QLineEdit(self)
-        self.vin_lower_limit_textentry.setFixedWidth(50)
-        self.vin_lower_limit_textentry.move(450, 265)
-        self.vin_lower_limit_textentry.setValidator(QIntValidator(4500, 12000, self))
-        self.vin_upper_limit_textentry = QLineEdit(self)
-        self.vin_upper_limit_textentry.setFixedWidth(50)
-        self.vin_upper_limit_textentry.move(450, 300)
-        self.vin_upper_limit_textentry.setValidator(QIntValidator(4500, 12000, self))
-        self.vin_lower_limit_textentry_label = QLabel("Voltage Lower Limit (mV):", self)
-        self.vin_lower_limit_textentry_label.move(300, 265)
-        self.vin_lower_limit_textentry_label.setFixedWidth(150)
-        self.vin_upper_limit_textentry_label = QLabel("Voltage Upper Limit (mV):", self)
-        self.vin_upper_limit_textentry_label.move(300, 300)
-        self.vin_upper_limit_textentry_label.setFixedWidth(150)
+        ## Position Status
 
-        self.servo_mode_radio_button = QRadioButton("Servo Mode", self)
-        self.servo_mode_radio_button.move(565, 50)
-        self.motor_mode_radio_button = QRadioButton("Motor Mode", self)
-        self.motor_mode_radio_button.move(565, 75)
-
-        self.motor_speed_slider = QSlider(Qt.Orientation.Horizontal, self)
-        self.motor_speed_slider.setMinimum(-1000)
-        self.motor_speed_slider.setMaximum(1000)
-        self.motor_speed_slider.setFixedWidth(200)
-        self.motor_speed_slider.move(565, 125)
-        motor_speed_slider_label = QLabel("Motor Speed:", self)
-        motor_speed_slider_label.move(565, 100)
-        self.speed_slider_readout = QLabel("0°", self) 
-        self.speed_slider_readout.setFixedWidth(50)
-        self.speed_slider_readout.move(450, 30)
-        self.speed_slider_readout.setAlignment(
-            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-        )
+        ### Position readout value
 
         self.physical_position_readout = QLabel("--°", self)
-        self.physical_position_readout.move(565, 167) #Posición en pantalla, columna, fila
+        self.physical_position_readout.move(45, 430) 
         self.physical_position_readout.setFixedWidth(200)
+
+        ### Position readout text
+
         self.physical_position_readout_label = QLabel("Position", self)
-        self.physical_position_readout_label.move(565, 147)#Posición en pantalla, columna, fila
+        self.physical_position_readout_label.move(30, 410)
+
+        ## Temperature Status
+
+        ### Temperature readout value
 
         self.temperature_readout = QLabel("-- °C", self)
-        self.temperature_readout.move(635, 167)#Posición en pantalla, columna, fila
+        self.temperature_readout.move(125,430)
         self.temperature_readout.setFixedWidth(200)
+
+        ### Temperature readout text
+
         self.temperature_readout_label = QLabel("Temperature", self)
-        self.temperature_readout_label.move(635, 147)#Posición en pantalla, columna, fila
+        self.temperature_readout_label.move(100, 410)
+
+        ## Voltage Status
+
+        ### Voltage read out value
 
         self.voltage_readout = QLabel("-- V", self)
-        self.voltage_readout.move(730, 167)#Posición en pantalla, columna, fila
+        self.voltage_readout.move(200, 430)
         self.voltage_readout.setFixedWidth(200)
-        self.voltage_readout_label = QLabel("Voltage", self)
-        self.voltage_readout_label.move(730, 147)#Posición en pantalla, columna, fila
 
-        # Nuevo botón para speed solo poniéndolo
+        ### Voltage read out text
+
+        self.voltage_readout_label = QLabel("Voltage", self)
+        self.voltage_readout_label.move(190, 410)
+
+        # Servo Mode Option
+
+        self.servo_mode_radio_button = QRadioButton("Servo Mode", self)
+        self.servo_mode_radio_button.move(300, 30)
+
+        # Servo Motor Option
+
+        self.motor_mode_radio_button = QRadioButton("Motor Mode", self)
+        self.motor_mode_radio_button.move(400, 30)
+
+        # Use Camera Checkbox
+
+        self.use_camera_checkbox = QCheckBox("Use Camera",self)
+        self.use_camera_checkbox.move(500, 30)
+
+        # Falta
+
+        ## Use Not Camera time
+
+        ### Not Use Camera Time Text
+        
+        set_not_camera_time_edit_label = QLabel("Set Time:", self)
+        set_not_camera_time_edit_label.move(595, 30)
+        set_not_camera_time_edit_label.setFixedSize(70, 27)
+
+        ### Not Use Camera Time Edit
+
+        self.set_not_camera_time_edit = QLineEdit(self)
+        self.set_not_camera_time_edit.setFixedSize(50, 27)
+        self.set_not_camera_time_edit.move(650, 30)
+
+        ### Not Use Camera Time Button
+
+        # Falta
+
+        self.not_camera_time_button = QPushButton("Set", self)
+        self.not_camera_time_button.move(700, 30)
+        self.not_camera_time_button.setFixedSize(30, 27)
+
+        # Falta
+
+        # Set Manual Angle
+
+        ## Set Manual Angle Text
+        
+        set_angle_line_edit_label = QLabel("Set Angle:", self)
+        set_angle_line_edit_label.move(280, 100)
+        set_angle_line_edit_label.setFixedSize(70, 27)
+
+        ## Set Manual Angle Edit
+
+        self.set_angle_line_edit = QLineEdit(self)
+        self.set_angle_line_edit.setFixedSize(50, 27)
+        self.set_angle_line_edit.move(340, 100)
+
+        ## Set Manual Angle Button
+
+        self.set_angle_button = QPushButton("Set", self)
+        self.set_angle_button.move(390, 100)
+        self.set_angle_button.setFixedSize(30, 27)
+
+        # Set Manual Speed
+
+        ## Set Manual Speed text
         
         set_speed_line_edit_label = QLabel("Set SPEED:", self)
-        set_speed_line_edit_label.move(565, 207)
+        set_speed_line_edit_label.move(430, 100)
         set_speed_line_edit_label.setFixedSize(70, 27)
+
+        ## Set Manual Speed edit
+
         self.set_speed_line_edit = QLineEdit(self)
         self.set_speed_line_edit.setFixedSize(50, 27)
-        self.set_speed_line_edit.move(635, 207)
+        self.set_speed_line_edit.move(490, 100)
+
+        ## Set Manual Speed button
 
         self.set_speed_button = QPushButton("Set", self)
-        self.set_speed_button.move(690, 205)#Posición en pantalla, columna, fila
-        self.set_speed_button.setFixedSize(50, 27)
+        self.set_speed_button.move(540, 100)
+        self.set_speed_button.setFixedSize(30, 27)
 
-        # Añadir el botón de etapas
+        # Set Manual Temperature
+
+        ## Set Manual Temperature text
+        
+        set_Temperature_line_edit_label = QLabel("Set Temperature:", self)
+        set_Temperature_line_edit_label.move(580, 100)
+        set_Temperature_line_edit_label.setFixedSize(90, 27)
+
+        ## Set Manual Temperature edit
+
+        self.set_Temperature_line_edit = QLineEdit(self)
+        self.set_Temperature_line_edit.setFixedSize(50, 27)
+        self.set_Temperature_line_edit.move(675, 100)
+
+        ## Set Manual Temperature button
+
+        self.set_Temperature_button = QPushButton("Set", self)
+        self.set_Temperature_button.move(725, 100)
+        self.set_Temperature_button.setFixedSize(30, 27)
+
+        # STAGES title
+
+        self.stages_title = QLabel("STAGES", self)
+        self.stages_title.setFont(font)
+        self.stages_title.move(500, 145)
+        self.stages_title.setFixedSize(60, 27)
+        self.stages_title.setAlignment(
+            Qt.AlignmentFlag.AlignVCenter
+        )
+
+        ## SPEED STAGES title
+
+        self.stages_title = QLabel("SPEED STAGES", self)
+        self.stages_title.move(340, 175)
+        self.stages_title.setFixedSize(80, 27)
+        self.stages_title.setAlignment(
+            Qt.AlignmentFlag.AlignVCenter
+        )
+
+        ## Stage 1 title
+
+        self.stage_1 = QLabel(f"Stage 1:", self)
+        self.stage_1.move(265, 195)
+        self.stage_1.setFixedSize(50, 27)   
+
+        ### Stage 1 Speed text
+
+        set_speed_1_line_edit_label = QLabel("Speed:", self)
+        set_speed_1_line_edit_label.move(275, 220)
+        set_speed_1_line_edit_label.setFixedSize(70, 27)
+        
+        ### Stage 1 Speed Edit
+
+        self.set_speed_1_line_edit = QLineEdit(self)
+        self.set_speed_1_line_edit.setFixedSize(40, 25)
+        self.set_speed_1_line_edit.move(315, 220) 
+
+        ### Stage 1 Time text  
+
+        set_time_1_line_edit_label = QLabel("Time:", self)
+        set_time_1_line_edit_label.move(360, 220)
+        set_time_1_line_edit_label.setFixedSize(70, 27)
+
+        ### Stage 1 Time Edit
+
+        self.set_time_1_line_edit = QLineEdit(self)
+        self.set_time_1_line_edit.setFixedSize(40, 25)
+        self.set_time_1_line_edit.move(390, 220)  
+
+        ### Stage 1 Lineal Checkbox
+
+        self.stage_1_checkbox = QCheckBox("Lineal", self)
+        self.stage_1_checkbox.move(435, 217)
+        self.stage_1_checkbox.setFixedWidth(200)
+
+        ## Stage 2 title
+
+        self.stage_2 = QLabel(f"Stage 2:", self)
+        self.stage_2.move(265, 245)
+        self.stage_2.setFixedSize(50, 27)
+
+        ### Stage 2 Speed text
+
+        set_speed_2_line_edit_label = QLabel("Speed:", self)
+        set_speed_2_line_edit_label.move(275, 270)
+        set_speed_2_line_edit_label.setFixedSize(70, 27)
+
+        ### Stage 2 Speed Edit
+
+        self.set_speed_2_line_edit = QLineEdit(self)
+        self.set_speed_2_line_edit.setFixedSize(40, 25)
+        self.set_speed_2_line_edit.move(315, 270)   
+
+        ### Stage 2 Time text
+
+        set_time_2_line_edit_label = QLabel("Time:", self)
+        set_time_2_line_edit_label.move(360, 270)
+        set_time_2_line_edit_label.setFixedSize(70, 27)
+
+        ### Stage 2 Time Edit
+
+        self.set_time_2_line_edit = QLineEdit(self)
+        self.set_time_2_line_edit.setFixedSize(40, 25)
+        self.set_time_2_line_edit.move(390, 270)  
+
+        ### Stage 2 Lineal Checkbox
+
+        self.stage_2_checkbox = QCheckBox("Lineal", self)
+        self.stage_2_checkbox.move(435, 267)
+        self.stage_2_checkbox.setFixedWidth(200)
+
+        ## Stage 3 title
+
+        self.stage_3 = QLabel(f"Stage 3:", self)
+        self.stage_3.move(265, 295)
+        self.stage_3.setFixedSize(50, 27)
+
+        ### Stage 3 Speed text
+
+        set_speed_3_line_edit_label = QLabel("Speed:", self)
+        set_speed_3_line_edit_label.move(275, 320)
+        set_speed_3_line_edit_label.setFixedSize(70, 27)
+
+        ### Stage 3 Speed Edit
+
+        self.set_speed_3_line_edit = QLineEdit(self)
+        self.set_speed_3_line_edit.setFixedSize(40, 25)
+        self.set_speed_3_line_edit.move(315, 320)   
+
+        ### Stage 3 Time text
+
+        set_time_3_line_edit_label = QLabel("Time:", self)
+        set_time_3_line_edit_label.move(360, 320)#45
+        set_time_3_line_edit_label.setFixedSize(70, 27)
+
+        ### Stage 3 Time Edit
+
+        self.set_time_3_line_edit = QLineEdit(self)
+        self.set_time_3_line_edit.setFixedSize(40, 25)
+        self.set_time_3_line_edit.move(390, 320) #30
+
+        ### Stage 3 Lineal Check box
+
+        self.stage_3_checkbox = QCheckBox("Lineal", self)
+        self.stage_3_checkbox.move(435, 317)#45
+        self.stage_3_checkbox.setFixedWidth(200)
+
+        ## ANGLE STAGES title
+
+        self.angle_stages_title = QLabel("ANGLE STAGES", self)
+        self.angle_stages_title.move(640, 175)
+        self.angle_stages_title.setFixedSize(80, 27)
+        self.angle_stages_title.setAlignment(
+            Qt.AlignmentFlag.AlignVCenter
+        )
+
+        ## Stage 1 title
+
+        self.angle_stage_1 = QLabel(f"Stage 1:", self)
+        self.angle_stage_1.move(565, 195)
+        self.angle_stage_1.setFixedSize(50, 27)   
+
+        ### Stage 1 Angle text
+
+        set_angle_speed_1_line_edit_label = QLabel("Angle:", self)
+        set_angle_speed_1_line_edit_label.move(575, 220)
+        set_angle_speed_1_line_edit_label.setFixedSize(70, 27)
+        
+        ### Stage 1 Angle Edit
+
+        self.set_angle_value_1_line_edit = QLineEdit(self)
+        self.set_angle_value_1_line_edit.setFixedSize(40, 25)
+        self.set_angle_value_1_line_edit.move(615, 220) 
+
+        ### Stage 1 Time text  
+
+        set_angle_time_1_line_edit_label = QLabel("Time:", self)
+        set_angle_time_1_line_edit_label.move(660, 220)
+        set_angle_time_1_line_edit_label.setFixedSize(70, 27)
+
+        ### Stage 1 Time Edit
+
+        self.set_angle_time_1_line_edit = QLineEdit(self)
+        self.set_angle_time_1_line_edit.setFixedSize(40, 25)
+        self.set_angle_time_1_line_edit.move(690, 220)  
+
+        ### Stage 1 Lineal Checkbox
+
+        self.angle_stage_1_checkbox = QCheckBox("Lineal", self)
+        self.angle_stage_1_checkbox.move(735, 217)
+        self.angle_stage_1_checkbox.setFixedWidth(200)
+
+        ## Stage 2 title
+
+        self.angle_stage_2 = QLabel(f"Stage 2:", self)
+        self.angle_stage_2.move(565, 245)
+        self.angle_stage_2.setFixedSize(50, 27)
+
+        ### Stage 2 Speed text
+
+        set_angle_speed_2_line_edit_label = QLabel("Speed:", self)
+        set_angle_speed_2_line_edit_label.move(575, 270)
+        set_angle_speed_2_line_edit_label.setFixedSize(70, 27)
+
+        ### Stage 2 Speed Edit
+
+        self.set_angle_value_2_line_edit = QLineEdit(self)
+        self.set_angle_value_2_line_edit.setFixedSize(40, 25)
+        self.set_angle_value_2_line_edit.move(615, 270)   
+
+        ### Stage 2 Time text
+
+        set_angle_time_2_line_edit_label = QLabel("Time:", self)
+        set_angle_time_2_line_edit_label.move(660, 270)
+        set_angle_time_2_line_edit_label.setFixedSize(70, 27)
+
+        ### Stage 2 Time Edit
+
+        self.set_angle_time_2_line_edit = QLineEdit(self)
+        self.set_angle_time_2_line_edit.setFixedSize(40, 25)
+        self.set_angle_time_2_line_edit.move(690, 270)
+
+        ### Stage 2 Lineal Checkbox
+
+        self.angle_stage_2_checkbox = QCheckBox("Lineal", self)
+        self.angle_stage_2_checkbox.move(735, 267)
+        self.angle_stage_2_checkbox.setFixedWidth(200)
+
+        ## Stage 3 title
+
+        self.angle_stage_3 = QLabel(f"Stage 3:", self)
+        self.angle_stage_3.move(565, 295)
+        self.angle_stage_3.setFixedSize(50, 27)
+
+        ### Stage 3 Speed text
+
+        set_angle_speed_3_line_edit_label = QLabel("Speed:", self)
+        set_angle_speed_3_line_edit_label.move(575, 320)
+        set_angle_speed_3_line_edit_label.setFixedSize(70, 27)
+
+        ### Stage 3 Speed Edit
+
+        self.set_angle_value_3_line_edit = QLineEdit(self)
+        self.set_angle_value_3_line_edit.setFixedSize(40, 25)
+        self.set_angle_value_3_line_edit.move(615, 320)   
+
+        ### Stage 3 Time text
+
+        set_angle_time_3_line_edit_label = QLabel("Time:", self)
+        set_angle_time_3_line_edit_label.move(660, 320)
+        set_angle_time_3_line_edit_label.setFixedSize(70, 27)
+
+        ### Stage 3 Time Edit
+
+        self.set_angle_time_3_line_edit = QLineEdit(self)
+        self.set_angle_time_3_line_edit.setFixedSize(40, 25)
+        self.set_angle_time_3_line_edit.move(690, 320)
+
+        ### Stage 3 Lineal Check box
+
+        self.angle_stage_3_checkbox = QCheckBox("Lineal", self)
+        self.angle_stage_3_checkbox.move(735, 317)
+        self.angle_stage_3_checkbox.setFixedWidth(200)
+
+        ## Stages Action button
+
+        self.begin_stages_button = QPushButton("Let's Go", self)
+        self.begin_stages_button.move(500, 400)
+        self.begin_stages_button.setFixedSize(50, 27)
+
+        # Initialize the program
         
         self.readout_update_timer = QTimer(self)
         self.readout_update_timer.timeout.connect(self.update_readouts)
         self.readout_update_timer.start(250)
 
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_temp)
+
+        # Initialize the servo
+
         self.active_servo: LX16A = None
 
-        self.position_slider.setValue(90)
-        self.position_offset_slider.setValue(0)
-        self.motor_speed_slider.setValue(0)
+        # Initialize the default values
+
+        self.set_speed_line_edit.setText("0")
+        self.set_speed_1_line_edit.setText("0")
+        self.set_speed_2_line_edit.setText("0")
+        self.set_speed_3_line_edit.setText("0")
+        self.set_time_1_line_edit.setText("0")
+        self.set_time_2_line_edit.setText("0")
+        self.set_time_3_line_edit.setText("0")
+        self.set_angle_line_edit.setText("0°")
+        self.set_angle_value_1_line_edit.setText("0")
+        self.set_angle_value_2_line_edit.setText("0")
+        self.set_angle_value_3_line_edit.setText("0")
+        self.set_angle_time_1_line_edit.setText("0")
+        self.set_angle_time_2_line_edit.setText("0")
+        self.set_angle_time_3_line_edit.setText("0")
+        self.set_Temperature_line_edit.setText("0")
         self.id_selection_box_refresh_button.setEnabled(False)
         self.disable_widgets()
 
@@ -212,62 +544,105 @@ class MainWindow(QMainWindow):
         )
         # Motor Button
         self.set_speed_button.pressed.connect(self.motor_speed_button_updated)
-        
 
+        self.set_Temperature_button.pressed.connect(self.verify_Temperature)
+
+        # Stages Button
+        self.begin_stages_button.pressed.connect(self.stagesRun)
+        self.begin_stages_button.pressed.connect(self.stagesRunAngle)
+    
         self.set_id_button.pressed.connect(self.id_updated)
-        self.position_slider.sliderMoved.connect(self.position_slider_updated)
-        self.position_offset_slider.sliderMoved.connect(
-            self.position_offset_slider_updated
-        )
-        self.angle_lower_limit_textentry.textChanged.connect(
-            self.angle_lower_limit_updated
-        )
-        self.angle_upper_limit_textentry.textChanged.connect(
-            self.angle_upper_limit_updated
-        )
-        self.vin_lower_limit_textentry.textChanged.connect(self.vin_lower_limit_updated)
-        self.vin_upper_limit_textentry.textChanged.connect(self.vin_upper_limit_updated)
+
+        self.set_angle_button.pressed.connect(self.position_button_updated)
+
         self.servo_mode_radio_button.toggled.connect(
             self.servo_mode_radio_button_toggled
         )
+
         self.motor_mode_radio_button.toggled.connect(
             self.motor_mode_radio_button_toggled
         )
-        self.motor_speed_slider.valueChanged.connect(self.motor_speed_slider_updated)
 
         self.scan_for_ports()
 
     def disable_widgets(self):
 
-        # Disable the speed editor
+        # Disable the new buttons/line edit/checkbox
         self.set_speed_line_edit.setEnabled(False)
+        self.set_speed_button.setEnabled(False)
+        self.set_angle_button.setEnabled(False)
+        self.set_Temperature_line_edit.setEnabled(False)
+        self.set_Temperature_button.setEnabled(False)
+
+        # Enable speed stages
+
+        self.set_speed_1_line_edit.setEnabled(False)
+        self.set_speed_2_line_edit.setEnabled(False)
+        self.set_speed_3_line_edit.setEnabled(False)
+        self.set_time_1_line_edit.setEnabled(False)
+        self.set_time_2_line_edit.setEnabled(False)
+        self.set_time_3_line_edit.setEnabled(False)
+        self.stage_1_checkbox.setEnabled(False)
+        self.stage_2_checkbox.setEnabled(False)
+        self.stage_3_checkbox.setEnabled(False)
+        self.begin_stages_button.setEnabled(False)
+
+        # Enable angle stages
+
+        self.set_angle_value_1_line_edit.setEnabled(False)
+        self.set_angle_value_2_line_edit.setEnabled(False)
+        self.set_angle_value_3_line_edit.setEnabled(False)
+        self.set_angle_time_1_line_edit.setEnabled(False)
+        self.set_angle_time_2_line_edit.setEnabled(False)
+        self.set_angle_time_3_line_edit.setEnabled(False)
+        self.angle_stage_1_checkbox.setEnabled(False)
+        self.angle_stage_2_checkbox.setEnabled(False)
+        self.angle_stage_3_checkbox.setEnabled(False)
 
         self.set_id_line_edit.setEnabled(False)
-        self.position_slider.setEnabled(False)
-        self.position_offset_slider.setEnabled(False)
-        self.angle_lower_limit_textentry.setEnabled(False)
-        self.angle_upper_limit_textentry.setEnabled(False)
-        self.vin_lower_limit_textentry.setEnabled(False)
-        self.vin_upper_limit_textentry.setEnabled(False)
+        self.set_angle_button.setEnabled(False)
+        self.set_angle_line_edit.setEnabled(False)
         self.servo_mode_radio_button.setEnabled(False)
         self.motor_mode_radio_button.setEnabled(False)
-        self.motor_speed_slider.setEnabled(False)
 
     def enable_widgets(self):
 
-        # Activate the speed editor
+        # Activate the new buttons/lineedit/checkbox 
         self.set_speed_line_edit.setEnabled(True)
+        self.set_speed_button.setEnabled(True)
+        self.set_angle_button.setEnabled(True)
+        self.set_Temperature_line_edit.setEnabled(True)
+        self.set_Temperature_button.setEnabled(True)
+
+        # Enable speed stages
+
+        self.set_speed_1_line_edit.setEnabled(True)
+        self.set_speed_2_line_edit.setEnabled(True)
+        self.set_speed_3_line_edit.setEnabled(True)
+        self.set_time_1_line_edit.setEnabled(True)
+        self.set_time_2_line_edit.setEnabled(True)
+        self.set_time_3_line_edit.setEnabled(True)
+        self.stage_1_checkbox.setEnabled(True)
+        self.stage_2_checkbox.setEnabled(True)
+        self.stage_3_checkbox.setEnabled(True)
+        self.begin_stages_button.setEnabled(True)
+
+        # Enable angle stages
+
+        self.set_angle_value_1_line_edit.setEnabled(True)
+        self.set_angle_value_2_line_edit.setEnabled(True)
+        self.set_angle_value_3_line_edit.setEnabled(True)
+        self.set_angle_time_1_line_edit.setEnabled(True)
+        self.set_angle_time_2_line_edit.setEnabled(True)
+        self.set_angle_time_3_line_edit.setEnabled(True)
+        self.angle_stage_1_checkbox.setEnabled(True)
+        self.angle_stage_2_checkbox.setEnabled(True)
+        self.angle_stage_3_checkbox.setEnabled(True)
 
         self.set_id_line_edit.setEnabled(True)
-        self.position_slider.setEnabled(True)
-        self.position_offset_slider.setEnabled(True)
-        self.angle_lower_limit_textentry.setEnabled(True)
-        self.angle_upper_limit_textentry.setEnabled(True)
-        self.vin_lower_limit_textentry.setEnabled(True)
-        self.vin_upper_limit_textentry.setEnabled(True)
+        self.set_angle_line_edit.setEnabled(True)
         self.servo_mode_radio_button.setEnabled(True)
         self.motor_mode_radio_button.setEnabled(True)
-        self.motor_speed_slider.setEnabled(True)
 
     def clear_servo(self):
         self.active_servo = None
@@ -279,40 +654,10 @@ class MainWindow(QMainWindow):
 
         self.active_servo = LX16A(int(id_))
         self.active_servo.enable_torque()
-
-        self.position_slider.setValue(int(self.active_servo.get_physical_angle()))
-        self.speed_slider_readout.setText(
-            f"{int(self.active_servo.get_motor_speed() * 25 / 6) * 6 / 25:0.2f}°"
-        )
-        self.position_slider_readout.setText(
-            f"{int(self.active_servo.get_physical_angle() * 25 / 6) * 6 / 25:0.2f}°"
-        )
-        self.position_offset_slider.setValue(int(self.active_servo.get_angle_offset()))
-        self.position_offset_slider_readout.setText(
-            f"{int(self.active_servo.get_angle_offset() * 25 / 6) * 6 / 25:0.2f}°"
-        )
-        self.angle_lower_limit_textentry.setText(
-            str(int(self.active_servo.get_angle_limits()[0]))
-        )
-        self.angle_upper_limit_textentry.setText(
-            str(int(self.active_servo.get_angle_limits()[1]))
-        )
-        self.vin_lower_limit_textentry.setText(
-            str(self.active_servo.get_vin_limits()[0])
-        )
-        self.vin_upper_limit_textentry.setText(
-            str(self.active_servo.get_vin_limits()[1])
-        )
-        self.motor_speed_slider.setValue(
-            self.active_servo.get_motor_speed()
-            if self.active_servo.is_motor_mode()
-            else 0
-        )
         if self.active_servo.is_motor_mode():
             self.motor_mode_radio_button.setChecked(True)
         else:
             self.servo_mode_radio_button.setChecked(True)
-        self.motor_speed_slider.setEnabled(self.active_servo.is_motor_mode())
 
     @catch_disconnection
     def scan_for_servos(self, port):
@@ -358,7 +703,6 @@ class MainWindow(QMainWindow):
         try:
             servo = LX16A(int(new_id))
         except ServoTimeoutError:
-            # Meaning this ID is not taken
             self.active_servo.set_id(int(new_id))
             self.id_selection_box.item(self.id_selection_box.currentRow()).setText(
                 new_id
@@ -369,125 +713,234 @@ class MainWindow(QMainWindow):
         QMessageBox.warning(None, "Error", "ID already taken")
         
     @catch_disconnection
-    def position_slider_updated(self, pos):
-        if float(self.voltage_readout.text()[:-2]) < 5:
+    def position_button_updated(self):
+        
+        pos = self.set_angle_line_edit.text()
+
+        if (int(pos) < 0) or (int(pos) > 90):
             QMessageBox.warning(
                 None,
                 "Error",
-                "The voltage going through the servo is too low. Is your battery powered on?",
+                "Angle range is from 0° to 90°",
             )
-
             return
-        self.active_servo.move(pos)
-        self.position_slider_readout.setText(f"{int(pos * 25 / 6) * 6 / 25:0.2f}°")
+        if int(pos) == 0:
+            self.active_servo.move(90)
+        else:
+            self.active_servo.move(float(pos)*2.13333333)      
 
-    @catch_disconnection
-    def position_offset_slider_updated(self, pos):
-        self.active_servo.set_angle_offset(pos)
-        self.position_offset_slider_readout.setText(
-            f"{int(pos * 25 / 6) * 6 / 25:0.2f}°"
-        )
 
-    @catch_disconnection
-    def angle_lower_limit_updated(self, text):
-        if (
-            QIntValidator(0, 240, self).validate(text, 0)
-            != QIntValidator.State.Acceptable
-        ):
-            return
+    # @catch_disconnection
+    # def temp_limit_updated(self, text):
+    #     if (
+    #         QIntValidator(50, 100, self).validate(text, 0)
+    #         != QIntValidator.State.Acceptable
+    #     ):
+    #         return
 
-        if int(text) > int(self.angle_upper_limit_textentry.text()):
-            return
-
-        self.active_servo.set_angle_limits(
-            int(text), int(self.angle_upper_limit_textentry.text())
-        )
-
-    @catch_disconnection
-    def angle_upper_limit_updated(self, text):
-        if (
-            QIntValidator(0, 240, self).validate(text, 0)
-            != QIntValidator.State.Acceptable
-        ):
-            return
-
-        if int(text) < int(self.angle_lower_limit_textentry.text()):
-            return
-
-        self.active_servo.set_angle_limits(
-            int(self.angle_lower_limit_textentry.text()), int(text)
-        )
-
-    @catch_disconnection
-    def vin_lower_limit_updated(self, text):
-        if (
-            QIntValidator(4500, 12000, self).validate(text, 0)
-            != QIntValidator.State.Acceptable
-        ):
-            return
-
-        if int(text) > int(self.vin_upper_limit_textentry.text()):
-            return
-
-        self.active_servo.set_vin_limits(
-            int(text), int(self.vin_upper_limit_textentry.text())
-        )
-
-    @catch_disconnection
-    def vin_upper_limit_updated(self, text):
-        if (
-            QIntValidator(4500, 12000, self).validate(text, 0)
-            != QIntValidator.State.Acceptable
-        ):
-            return
-
-        if int(text) < int(self.vin_lower_limit_textentry.text()):
-            return
-
-        self.active_servo.set_vin_limits(
-            int(self.vin_lower_limit_textentry.text()), int(text)
-        )
-
-    @catch_disconnection
-    def temp_limit_updated(self, text):
-        if (
-            QIntValidator(50, 100, self).validate(text, 0)
-            != QIntValidator.State.Acceptable
-        ):
-            return
-
-        self.active_servo.set_temp_limit(int(text))
+    #     self.active_servo.set_temp_limit(int(text))
 
     @catch_disconnection
     def servo_mode_radio_button_toggled(self, checked):
         if checked:
             self.active_servo.servo_mode()
-            self.motor_speed_slider.setEnabled(False)
-            self.position_slider.setEnabled(True)
-            self.position_offset_slider.setEnabled(True)
+            self.set_angle_line_edit.setEnabled(True)
         else:
-            self.active_servo.motor_mode(int(self.motor_speed_slider.value()))
-            self.motor_speed_slider.setEnabled(True)
-            self.position_slider.setEnabled(False)
-            self.position_offset_slider.setEnabled(False)
+            self.set_angle_line_edit.setEnabled(False)
+
 
     @catch_disconnection
     def motor_mode_radio_button_toggled(self, checked):
         if checked:
-            self.active_servo.motor_mode(int(self.motor_speed_slider.value()))
-            self.motor_speed_slider.setEnabled(True)
-            self.position_slider.setEnabled(False)
-            self.position_offset_slider.setEnabled(False)
+            self.set_angle_line_edit.setEnabled(False)
         else:
             self.active_servo.servo_mode()
-            self.motor_speed_slider.setEnabled(False)
-            self.position_slider.setEnabled(True)
-            self.position_offset_slider.setEnabled(True)
+            self.set_angle_line_edit.setEnabled(True)
+
+    def increaseAngle(self,actualAngle,speed,step,index):
+        if int(speed[index]) > actualAngle:
+            while actualAngle < int(speed[index]):       
+                self.active_servo.motor_mode(int(actualAngle))           
+                time.sleep(1)
+                actualAngle += step
+        else:
+            while actualAngle > int(speed[index]):       
+                self.active_servo.motor_mode(int(actualAngle))           
+                time.sleep(1)
+                actualAngle -= step
+
+    def increaseSpeed(self,actualSpeed,speed,step,index):
+        if int(speed[index]) > actualSpeed:
+            while actualSpeed < int(speed[index]):       
+                self.active_servo.motor_mode(int(actualSpeed))           
+                time.sleep(1)
+                actualSpeed += step
+        else:
+            while actualSpeed > int(speed[index]):       
+                self.active_servo.motor_mode(int(actualSpeed))           
+                time.sleep(1)
+                actualSpeed -= step
+
+
+    def verify_Temperature(self):
+        try:
+            self.target_temperature = int(self.set_Temperature_line_edit.text())
+            if self.target_temperature > 0:
+                self.timer.start(250)  # Check temperature every 250 milliseconds
+        except ValueError:
+            QMessageBox.warning(
+                None,
+                "Error",
+                "Please enter a valid integer for temperature.",
+            )
+            return
+
+    def update_temp(self):
+        current_temp = self.active_servo.get_temp()
+        if current_temp >= self.target_temperature:
+            QMessageBox.warning(
+                None,
+                "Warning",
+                f"Temperature {current_temp} exceeds {self.target_temperature}, stopping motor.",
+            )
+            return
+
+    def stop_motor(self):
+        stop = 0
+        self.active_servo.move(stop)
+        self.active_servo.motor_mode(stop)
+        self.timer.stop()
+
+
+    @catch_disconnection
+    def stagesRunAngle(self):
+
+        pos0 = 0
+        varNull = ''
+
+        pos1 = self.set_angle_value_1_line_edit.text()
+        pos2 = self.set_angle_value_2_line_edit.text()
+        pos3 = self.set_angle_value_3_line_edit.text()
+
+        time1 = self.set_angle_time_1_line_edit.text()
+        time2 = self.set_angle_time_2_line_edit.text()
+        time3 = self.set_angle_time_3_line_edit.text()
+
+        isLineal1 = self.angle_stage_1_checkbox.isChecked()
+        isLineal2 = self.angle_stage_2_checkbox.isChecked()
+        isLineal3 = self.angle_stage_3_checkbox.isChecked()
+
+        pos = [pos1,pos2,pos3]
+        times = [time1,time2,time3]
+        lineal = [isLineal1,isLineal2,isLineal3]
+        
+        if (pos[0]!=varNull and times[0] == varNull) or (pos[1]!=varNull and times[1] == varNull) or (pos[2]!=varNull and times[2] == varNull):
+            QMessageBox.warning(
+                None,
+                "Error",
+                "If you select an angle value, select a time value too",
+            )
+            return
+        
+        try:
+            for i in range(len(pos)):
+                int(pos[i])
+                float(times[i])
+        except ValueError:
+            QMessageBox.warning(
+                None,
+                "Error",
+                f"Some fields were fulled with string characters maybe {pos[i]} or {times[i]}",
+            )
+            return
+        else:
+            for i in range(len(pos)):
+                if float(times[i]) == 0:
+                    pass
+                else:
+                    if lineal[i]:
+                        if i == 0:
+                            step = int(pos[i])/(float(times[i])*60)
+                            actualAngle = pos0
+                            self.increaseAngle(actualAngle,pos,step,i)
+                        else:
+                            step = abs(int(pos[i])-int(pos[i-1]))/(float(times[i])*60)
+                            actualAngle = int(pos[i-1])
+                            self.increaseAngle(actualAngle,pos,step,i)
+                    else:
+                        actualAngle = int(pos[i])
+                        self.active_servo.move(actualAngle)
+                        time.sleep(float(times[i])*60)
+                        
+        self.active_servo.move(pos0)
+
+    @catch_disconnection
+    def stagesRun(self):
+
+        pos0 = 0
+        varNull = ''
+
+        pos1 = self.set_speed_1_line_edit.text()
+        pos2 = self.set_speed_2_line_edit.text()
+        pos3 = self.set_speed_3_line_edit.text()
+
+        time1 = self.set_time_1_line_edit.text()
+        time2 = self.set_time_2_line_edit.text()
+        time3 = self.set_time_3_line_edit.text()
+
+        isLineal1 = self.stage_1_checkbox.isChecked()
+        isLineal2 = self.stage_2_checkbox.isChecked()
+        isLineal3 = self.stage_3_checkbox.isChecked()
+
+        pos = [pos1,pos2,pos3]
+        times = [time1,time2,time3]
+        lineal = [isLineal1,isLineal2,isLineal3]
+        
+        if (pos[0]!=varNull and times[0] == varNull) or (pos[1]!=varNull and times[1] == varNull) or (pos[2]!=varNull and times[2] == varNull):
+            QMessageBox.warning(
+                None,
+                "Error",
+                "If you select a speed value, select a time value too",
+            )
+            return
+        
+        try:
+            for i in range(len(pos)):
+                int(pos[i])
+                float(times[i])
+        except ValueError:
+            QMessageBox.warning(
+                None,
+                "Error",
+                f"Some fields were fulled with string characters maybe {pos[i]} or {times[i]}",
+            )
+            return
+        else:
+            for i in range(len(pos)):
+                if float(times[i]) == 0:
+                    pass
+                else:
+                    if lineal[i]:
+                        if i == 0:
+                            step = int(pos[i])/(float(times[i])*60)
+                            actualSpeed = pos0
+                            self.increaseSpeed(actualSpeed,pos,step,i)
+                        else:
+                            step = abs(int(pos[i])-int(pos[i-1]))/(float(times[i])*60)
+                            actualSpeed = int(pos[i-1])
+                            self.increaseSpeed(actualSpeed,pos,step,i)
+                    else:
+                        actualSpeed = int(pos[i])
+                        self.active_servo.motor_mode(actualSpeed)
+                        time.sleep(float(times[i])*60)
+                        
+        self.active_servo.motor_mode(pos0)
 
     @catch_disconnection
     def motor_speed_button_updated(self):
 
         pos = self.set_speed_line_edit.text()
+        t = self.set_time_line_edit.text()
 
         if float(self.voltage_readout.text()[:-2]) < 5:
             QMessageBox.warning(
@@ -498,26 +951,8 @@ class MainWindow(QMainWindow):
 
             return
         self.active_servo.motor_mode(int(pos))
-        time.sleep(5)
+        time.sleep(float(t)*60)
         self.active_servo.motor_mode(0)
-
-        # Speed indicator
-        self.speed_slider_readout.setText(f"{int(pos)}")
-
-    @catch_disconnection
-    def motor_speed_slider_updated(self, pos):
-        if float(self.voltage_readout.text()[:-2]) < 5:
-            QMessageBox.warning(
-                None,
-                "Error",
-                "The voltage going through the servo is too low. Is your battery powered on?",
-            )
-
-            return
-        self.active_servo.motor_mode(pos)
-        # Speed indicator
-        self.speed_slider_readout.setText(f"{int(pos)}")
-
 
     @catch_disconnection
     def port_refresh_button_clicked(self, value):
